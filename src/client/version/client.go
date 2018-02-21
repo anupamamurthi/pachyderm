@@ -19,7 +19,7 @@ var (
 	// AdditionalVersion is the string provided at release time
 	// The value is passed to the linker at build time
 	// DO NOT set the value of this variable here
-	AdditionalVersion = "rc1"
+	AdditionalVersion string
 	// Version is the current version for pachyderm.
 	Version = &pb.Version{
 		Major:      MajorVersion,
