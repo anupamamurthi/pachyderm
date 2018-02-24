@@ -143,16 +143,34 @@ func TestAdmins(t *testing.T) {
 	// (so that deactivateAuth() runs), and call 'list-admin' (to make sure it
 	// works for non-admins)
 	require.NoError(t, tu.Cmd("pachctl", "auth", "login", "-u", "admin2").Run())
-	cmd := tu.BashCmd(`
+	require.NoError(t, tu.BashCmd(`
 		pachctl auth modify-admins --add admin --remove admin2
 		pachctl auth list-admins \
 			| match -v "admin2" \
 			| match "admin"
-		`,
-		"alice", tu.UniqueString("alice"),
-		"bob", tu.UniqueString("bob"),
-	)
-	require.NoError(t, cmd.Run())
+		`).Run())
+}
+
+func TestAdmins(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration tests in short mode")
+	}
+	activateAuth(t)
+	defer deactivateAuth(t)
+
+	// Add admin2, and then try to remove it along with a fake admin. Make sure we
+	// get an error
+	require.NoError(t, tu.Cmd("pachctl", "auth", "login", "-u", "admin").Run())
+	require.NoError(t, tu.BashCmd(`
+		pachctl auth list-admins \
+			| match "admin"
+		pachctl auth modify-admins --add admin2
+		pachctl auth list-admins \
+			| match  "admin2"
+		pachctl auth modify-admins --remove admin2,not_in_list \
+			&& { echo "should have errored--'not_in_list' doesn't exist"; false; } \
+			|| true
+		`).Run())
 }
 
 func TestMain(m *testing.M) {
